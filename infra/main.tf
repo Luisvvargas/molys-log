@@ -151,14 +151,32 @@ resource "azurerm_postgresql_flexible_server_firewall_rule" "azure_services" {
   end_ip_address   = "0.0.0.0"
 }
 
-# ---------- Static Web App (React frontend) ----------
+# ---------- Frontend hosting (same React build for both options) ----------
+# "swa"  = intended architecture (Azure Static Web Apps, required by the course).
+# "blob" = fallback when a subscription policy blocks every SWA region (see README).
 resource "azurerm_static_web_app" "main" {
+  count               = var.frontend_hosting == "swa" ? 1 : 0
   name                = "stapp-${var.project}-${local.suffix}"
   location            = var.swa_location
   resource_group_name = azurerm_resource_group.main.name
   sku_tier            = "Free"
   sku_size            = "Free"
   tags                = local.tags
+}
+
+# Static website on the existing storage account: served from the $web container
+# over the public web endpoint; the account itself stays key-less and non-public.
+resource "azurerm_storage_account_static_website" "frontend" {
+  count              = var.frontend_hosting == "blob" ? 1 : 0
+  storage_account_id = azurerm_storage_account.main.id
+  index_document     = "index.html"
+  error_404_document = "index.html" # SPA fallback for client-side routes
+}
+
+locals {
+  frontend_origin = (var.frontend_hosting == "swa"
+    ? "https://${azurerm_static_web_app.main[0].default_host_name}"
+  : trimsuffix(azurerm_storage_account.main.primary_web_endpoint, "/"))
 }
 
 # ---------- Azure Functions (REST API, Flex Consumption) ----------
@@ -194,7 +212,7 @@ resource "azurerm_function_app_flex_consumption" "api" {
   site_config {
     application_insights_connection_string = azurerm_application_insights.main.connection_string
     cors {
-      allowed_origins = ["https://${azurerm_static_web_app.main.default_host_name}", "http://localhost:5173"]
+      allowed_origins = [local.frontend_origin, "http://localhost:5173"]
     }
   }
 

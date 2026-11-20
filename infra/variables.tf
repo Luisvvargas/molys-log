@@ -12,13 +12,23 @@ variable "project" {
 variable "location" {
   description = "Region for Functions, PostgreSQL, Storage, Key Vault and monitoring."
   type        = string
-  default     = "centralus" # subscription policy allows: westus, brazilsouth, northcentralus, mexicocentral, centralus
+  default     = "westus" # Luis's subscription policy allows: westus, northcentralus, mexicocentral, brazilsouth, canadacentral
+}
+
+variable "frontend_hosting" {
+  description = "Frontend host: \"swa\" (intended, Azure Static Web Apps) or \"blob\" (Storage static website fallback)."
+  type        = string
+  default     = "swa"
+  validation {
+    condition     = contains(["swa", "blob"], var.frontend_hosting)
+    error_message = "frontend_hosting must be \"swa\" or \"blob\"."
+  }
 }
 
 variable "swa_location" {
   description = "Static Web Apps region (SWA offers: westus2, centralus, eastus2, westeurope, eastasia)."
   type        = string
-  default     = "centralus" # only overlap between SWA regions and the allowed-regions policy
+  default     = "centralus" # used only when frontend_hosting = "swa"
 }
 
 variable "github_repository" {

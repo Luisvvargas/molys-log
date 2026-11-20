@@ -1,5 +1,9 @@
 # Copy to terraform.tfvars (gitignored) and fill in. Contains no secrets.
 subscription_id   = "00000000-0000-0000-0000-000000000000"
 github_repository = "owner/molys-log"
-location          = "centralus"
-swa_location      = "centralus"
+location          = "westus"
+
+# "swa" = intended architecture. Use "blob" on subscriptions whose
+# "Allowed resource deployment regions" policy excludes every SWA region.
+frontend_hosting = "blob"
+swa_location     = "centralus"

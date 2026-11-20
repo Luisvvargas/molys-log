@@ -10,12 +10,16 @@ output "api_base_url" {
   value = "https://${azurerm_function_app_flex_consumption.api.default_hostname}"
 }
 
+output "frontend_hosting" {
+  value = var.frontend_hosting
+}
+
 output "static_web_app_name" {
-  value = azurerm_static_web_app.main.name
+  value = one(azurerm_static_web_app.main[*].name)
 }
 
 output "frontend_url" {
-  value = "https://${azurerm_static_web_app.main.default_host_name}"
+  value = local.frontend_origin
 }
 
 output "key_vault_name" {

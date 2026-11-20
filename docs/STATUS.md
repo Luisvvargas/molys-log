@@ -2,42 +2,51 @@
 
 _Last updated: 2026-11-19_
 
-## Location
-Project rebuilt in `~/dev/molys_log` (outside iCloud). The original `~/Documents/molys_log` copy had its files and `.git` evicted to iCloud as cloud-only placeholders; it is left untouched and is no longer used. Git history restarts here (the previous 2 local commits were never pushed).
+## Target subscription
+Luis's Azure for Students (Enabled, spending limit On). Octavio's subscription is **Disabled** (no credit) — not usable.
+Project lives in `~/dev/molys_log` (the iCloud copy in `~/Documents` is abandoned, untouched).
 
 ## Completed (local)
-- Terraform (`infra/`): RG, Log Analytics + App Insights, Storage (keys disabled) + 2 containers, Key Vault (RBAC), PostgreSQL Flexible B1ms + DB + firewall, SWA Free, Functions Flex Consumption (Node 22, system identity, Key Vault reference), role assignments, `id-github-actions` UAMI + Contributor on RG + federated credential (main only). Region: **centralus**.
-- DB admin password: ephemeral `random_password` + write-only attributes → never in state/plan; stored only in Key Vault `db-admin-password`.
-- `resource_provider_registrations = "none"`: plan never modifies the subscription.
-- Boilerplate: `api/` GET `/api/health`; `frontend/` React health page.
-- Scripts: `deploy.sh`, `verify.sh`, `scan-secrets.sh`, `rotate-db-password.sh`. Workflows: `ci.yml`, `deploy.yml` (OIDC).
+- Terraform (`infra/`): RG, Log Analytics + App Insights, Storage (keys disabled) + `app-package` + `pet-documents`, Key Vault (RBAC), PostgreSQL Flexible B1ms v16 + DB + firewall, Functions Flex Consumption (Node 22, system identity, Key Vault reference, CORS = frontend origin only), role assignments, `id-github-actions` UAMI (Contributor on RG, Blob Data Contributor) + federated credential (main only).
+- Frontend hosting flag `frontend_hosting`: `swa` (intended, retained) | `blob` (Storage static website, deployable fallback). Same React build.
+- DB password: ephemeral + write-only → never in state/plan; only in Key Vault `db-admin-password`.
+- `resource_provider_registrations = "none"`: Terraform never registers providers.
+- Scripts auto-detect SWA vs static website. Workflows: `ci.yml`, `deploy.yml` (OIDC).
 
-## Test results (local, 2026-11-19)
+## Test results (2026-11-19)
 | Check | Result |
 |---|---|
-| `terraform fmt -check` / `validate` (azurerm 4.81.0, TF 1.17.2) | Pass |
-| API unit tests | 3/3 pass |
-| Frontend build | OK |
-| `npm audit` api (prod) / frontend | 0 vulnerabilities |
-| Shell syntax, all scripts | OK |
-| Gitleaks full history (1 commit) + manual checks | No findings |
-| `terraform plan` | **Not run** — target subscription is Disabled (see Azure findings) |
+| `terraform fmt -check`, `validate` | Pass |
+| `terraform plan` blob mode (Luis's sub, read-only) | 24 to add, 0 errors |
+| `terraform plan` swa mode (Luis's sub, read-only) | 24 to add, 0 errors (apply would be denied by region policy) |
+| Invalid `frontend_hosting` value | Rejected by variable validation |
+| Plan output | Contains no password values |
+| API unit tests / frontend build / npm audit | 3/3 pass / OK / 0 vulns |
+| Gitleaks full history + manual checks | No findings |
 
-## Azure findings (Octavio's Azure for Students subscription)
-- **BLOCKER: subscription state = Disabled** (ARM, 2026-11-19; offer AzureForStudents, spending limit On). Typical causes: $100 credit used up or 12-month term expired. Disabled subscriptions are read-only; no resources can be created.
-- Signed in as Octavio's own account (Owner). Luis has no delegated role on it yet.
-- An unrelated AKS cluster (`rg-aks-lab2`) in this subscription may have consumed the credit.
-- Policy "Allowed resource deployment regions": westus, brazilsouth, northcentralus, mexicocentral, centralus → everything in **centralus** (only overlap with SWA regions).
-- PostgreSQL B1ms available in centralus; Flex Consumption supports Node 20/22/24 there.
-- `Microsoft.DBforPostgreSQL` provider **NotRegistered** (needs `az provider register`, free; requires approval).
+## Azure findings (Luis's subscription)
+- Policy *Allowed resource deployment regions* (deny): westus, northcentralus, mexicocentral, brazilsouth, canadacentral → **no SWA region** → SWA blocked. Region used: westus.
+- PostgreSQL B1ms and Flex Consumption (Node 22) available in westus.
+- `Microsoft.DBforPostgreSQL` **NotRegistered** → must be registered before apply (needs approval).
+- Not verified until apply: PostgreSQL provisioning quota in westus; static website data-plane permission for the deployer.
 
-## Estimated cost (USD/month)
-PostgreSQL B1ms + 32 GB ≈ 15–17 (dominant; can be stopped when idle). Functions Flex, SWA Free, Key Vault, identities ≈ 0. Storage, Log Analytics (0.5 GB/day cap) < 1.
+## Existing resources consuming credit (read-only inspection, nothing modified)
+| Resource | State | Ongoing cost (approx.) |
+|---|---|---|
+| AKS `aks-zavashop-luis` (Free tier, 1× D4s_v4) | Stopped, VMSS 0 instances | ~0 compute |
+| 2× Standard public IP (MC_ RG) | Allocated | ~USD 3.6/mo each |
+| Standard Load Balancer `kubernetes` (1 rule + 1 outbound) | Exists | ~USD 18/mo if billed while stopped |
+| 2× ACR Basic (zavashop, aks-tarea) | Exists | ~USD 5/mo each |
+| 8 Container Apps (min replicas 1) | Stopped | ~0 while stopped |
+| Cognitive Services S0 (aks-tarea) | Exists | pay-per-use |
+| 3× Log Analytics workspaces | Exist | ingestion-based |
+Cost Management query returned no cost rows (Azure for Students often doesn't expose it via API); check the portal for exact figures.
+
+## Estimated cost of this deployment (USD/month)
+PostgreSQL B1ms + 32 GB ≈ 15–17 (stop when idle). Functions Flex, static website, Key Vault, identities ≈ 0. Storage, Log Analytics (0.5 GB/day cap) < 1.
 
 ## Outstanding
-- Second Draft: `terraform plan` → apply (needs approval) → deploy → verify; create/push GitHub repo.
-- Lab A: rescan after publishing; report "no findings" truthfully (new repo).
-- Lab B: Key Vault/identity evidence after apply.
-- Lab C: no exposed credentials → nothing to rotate; optional demo via `rotate-db-password.sh` needs approval.
-- Lab D: GitHub secrets, successful run on main, failing run from `test-oidc`.
-- PDF report.
+- Approval: register `Microsoft.DBforPostgreSQL`; `terraform apply` (blob mode); create + push GitHub repo (need owner/name).
+- Second Draft: apply → deploy → verify → evidence.
+- Lab A: rescan after push. Lab B: Key Vault evidence after apply. Lab C: nothing exposed → report honestly; optional demo needs approval. Lab D: GitHub secrets + main run + `test-oidc` negative run.
+- PDF report (must state SWA deviation).
