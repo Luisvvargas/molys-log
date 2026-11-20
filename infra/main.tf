@@ -114,6 +114,10 @@ resource "azurerm_key_vault_secret" "db_admin_password" {
   value_wo_version = var.db_password_version
   content_type     = "PostgreSQL admin password"
   depends_on       = [time_sleep.rbac_propagation]
+
+  lifecycle {
+    ignore_changes = [tags] # az keyvault secret set (rotation script) adds a file-encoding tag
+  }
 }
 
 resource "azurerm_postgresql_flexible_server" "main" {
