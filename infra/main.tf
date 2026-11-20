@@ -217,6 +217,7 @@ resource "azurerm_function_app_flex_consumption" "api" {
   }
 
   app_settings = {
+    AzureWebJobsStorage              = "" # provider otherwise injects a key-based connection string; host must use identity
     AzureWebJobsStorage__accountName = azurerm_storage_account.main.name
     AzureWebJobsStorage__credential  = "managedidentity"
     DB_HOST                          = azurerm_postgresql_flexible_server.main.fqdn
@@ -229,6 +230,11 @@ resource "azurerm_function_app_flex_consumption" "api" {
   }
 
   tags = local.tags
+
+  lifecycle {
+    # The empty override above is read back as "absent"; ignore that cosmetic diff.
+    ignore_changes = [app_settings["AzureWebJobsStorage"]]
+  }
 }
 
 # Application identity: read secrets only (least privilege).
