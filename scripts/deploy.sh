@@ -12,7 +12,8 @@ FUNC=$(az functionapp list -g "$RG" --query "[0].name" -o tsv)
 # Frontend host: SWA if present (intended), otherwise the Storage static website fallback.
 SWA=$(az staticwebapp list -g "$RG" --query "[0].name" -o tsv 2>/dev/null || true)
 ST=$(az storage account list -g "$RG" --query "[0].name" -o tsv)
-API_HOST=$(az functionapp show -g "$RG" -n "$FUNC" --query defaultHostName -o tsv)
+API_HOST=$(az functionapp show -g "$RG" -n "$FUNC" --query properties.defaultHostName -o tsv)
+[[ -n "$API_HOST" ]] || { echo "Could not resolve Function App hostname" >&2; exit 1; }
 
 echo "==> Packaging API"
 pushd "$ROOT/api" >/dev/null

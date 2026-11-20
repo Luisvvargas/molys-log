@@ -5,7 +5,8 @@ set -euo pipefail
 RG="${RESOURCE_GROUP:-rg-molyslog}"
 
 FUNC=$(az functionapp list -g "$RG" --query "[0].name" -o tsv)
-API_HOST=$(az functionapp show -g "$RG" -n "$FUNC" --query defaultHostName -o tsv)
+API_HOST=$(az functionapp show -g "$RG" -n "$FUNC" --query properties.defaultHostName -o tsv)
+[[ -n "$API_HOST" ]] || { echo "Could not resolve Function App hostname" >&2; exit 1; }
 SWA_HOST=$(az staticwebapp list -g "$RG" --query "[0].defaultHostname" -o tsv 2>/dev/null || true)
 if [[ -n "$SWA_HOST" ]]; then
   ORIGIN="https://$SWA_HOST"; echo "Frontend host: Static Web Apps"
