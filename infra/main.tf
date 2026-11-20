@@ -118,7 +118,7 @@ resource "azurerm_key_vault_secret" "db_admin_password" {
 
 resource "azurerm_postgresql_flexible_server" "main" {
   name                              = "psql-${var.project}-${local.suffix}"
-  location                          = azurerm_resource_group.main.location
+  location                          = coalesce(var.postgres_location, var.location)
   resource_group_name               = azurerm_resource_group.main.name
   version                           = "16"
   sku_name                          = var.postgres_sku

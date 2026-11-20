@@ -54,6 +54,12 @@ variable "db_password_version" {
   default     = 1
 }
 
+variable "postgres_location" {
+  description = "Region for PostgreSQL; empty = same as location. Some student subscriptions get SkuNotAvailable for B1ms in a region."
+  type        = string
+  default     = ""
+}
+
 variable "postgres_sku" {
   description = "PostgreSQL Flexible Server SKU. B_Standard_B1ms is the cheapest burstable tier."
   type        = string

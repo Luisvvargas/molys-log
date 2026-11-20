@@ -29,7 +29,7 @@ Therefore the deployment uses `frontend_hosting = "blob"`: the same React build 
 Security is unchanged: storage account keys stay disabled, uploads use Entra ID (`--auth-mode login`), only `$web` is publicly readable, and Function CORS allows only the frontend origin.
 Switching back is one variable: `frontend_hosting = "swa"` on a subscription that allows a SWA region.
 
-All other resources deploy to `location` (`westus`).
+All other resources deploy to `location` (`westus`), except PostgreSQL: `postgres_location = "northcentralus"` because Azure returned `SkuNotAvailable` for B1ms in westus on this subscription.
 
 The Free SWA plan cannot link a "bring your own" Function App (Standard plan, ~USD 9/month), so in both modes the frontend calls the Function App URL directly.
 

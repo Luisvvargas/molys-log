@@ -3,6 +3,9 @@ subscription_id   = "00000000-0000-0000-0000-000000000000"
 github_repository = "owner/molys-log"
 location          = "westus"
 
+# B1ms returned SkuNotAvailable in westus for this subscription; northcentralus works.
+postgres_location = "northcentralus"
+
 # "swa" = intended architecture. Use "blob" on subscriptions whose
 # "Allowed resource deployment regions" policy excludes every SWA region.
 frontend_hosting = "blob"
