@@ -1,72 +1,46 @@
 # Status — Moly's Log
 
-_Last updated: 2026-11-19_
+_Last updated: 2026-11-20_
 
-## Target subscription
-Luis's Azure for Students (Enabled, spending limit On). Octavio's subscription is **Disabled** (no credit) — not usable.
-Project lives in `~/dev/molys_log` (the iCloud copy in `~/Documents` is abandoned, untouched).
+Repository: https://github.com/Luisvvargas/molys-log (public). Subscription: Luis's Azure for Students (Octavio's is disabled — no credit).
 
-## Completed (local)
-- Terraform (`infra/`): RG, Log Analytics + App Insights, Storage (keys disabled) + `app-package` + `pet-documents`, Key Vault (RBAC), PostgreSQL Flexible B1ms v16 + DB + firewall, Functions Flex Consumption (Node 22, system identity, Key Vault reference, CORS = frontend origin only), role assignments, `id-github-actions` UAMI (Contributor on RG, Blob Data Contributor) + federated credential (main only).
-- Frontend hosting flag `frontend_hosting`: `swa` (intended, retained) | `blob` (Storage static website, deployable fallback). Same React build.
-- DB password: ephemeral + write-only → never in state/plan; only in Key Vault `db-admin-password`.
-- `resource_provider_registrations = "none"`: Terraform never registers providers.
-- Scripts auto-detect SWA vs static website. Workflows: `ci.yml`, `deploy.yml` (OIDC).
-
-## Test results (2026-11-19)
-| Check | Result |
+## Second Draft — complete (with one documented deviation)
+| Requirement | Result |
 |---|---|
-| `terraform fmt -check`, `validate` | Pass |
-| `terraform plan` blob mode (Luis's sub, read-only) | 24 to add, 0 errors |
-| `terraform plan` swa mode (Luis's sub, read-only) | 24 to add, 0 errors (apply would be denied by region policy) |
-| Invalid `frontend_hosting` value | Rejected by variable validation |
-| Plan output | Contains no password values |
-| API unit tests / frontend build / npm audit | 3/3 pass / OK / 0 vulns |
-| Gitleaks full history + manual checks | No findings |
+| IaC research + scripts | Terraform (`infra/`), azurerm 4.81, TF ≥ 1.11 (ephemeral/write-only DB password) |
+| Scripts for all resources | 24 resources: RG, Log Analytics, App Insights, Storage (keys disabled, `app-package`, `pet-documents`, static website), Key Vault (RBAC), PostgreSQL Flexible B1ms v16 + DB + firewall, Functions Flex Consumption (Node 22), 6 role assignments, GitHub OIDC UAMI + federated credential |
+| Tested with boilerplate | Deployed; `verify.sh` in the OIDC pipeline: frontend HTTP 200, `/api/health` 200 `{"keyVaultSecretResolved":true,"database":true,"blobStorage":true}`, CORS = frontend origin only |
+| Repo with boilerplate | Public repo above; CI (gitleaks, terraform fmt/validate, tests, build) green |
+| **Deviation** | SWA config kept (`frontend_hosting = "swa"`), but the subscription's allowed-regions policy (deny) excludes every SWA region → deployed with `frontend_hosting = "blob"` (Storage static website). No policy exemption. Not SWA compliance. |
+| Region notes | App resources `westus`; PostgreSQL `northcentralus` (B1ms `SkuNotAvailable` in westus) |
 
-## Azure findings (Luis's subscription)
-- Policy *Allowed resource deployment regions* (deny): westus, northcentralus, mexicocentral, brazilsouth, canadacentral → **no SWA region** → SWA blocked. Region used: westus.
-- PostgreSQL B1ms and Flex Consumption (Node 22) available in westus.
-- `Microsoft.DBforPostgreSQL` **NotRegistered** → must be registered before apply (needs approval).
-- Not verified until apply: PostgreSQL provisioning quota in westus; static website data-plane permission for the deployer.
-
-## Pre-deployment audit (2026-11-19, read-only)
-- Target: Luis's subscription …04c0 (Enabled); CLI default and `terraform.tfvars` match. `rg-molyslog` does not exist yet. Region `westus`, `frontend_hosting = "blob"`.
-- Permissions: Owner (unconditional, actions `*`), no deny assignments → provider registration and the 6 planned role assignments are permitted. Policies: allowed-regions (deny; westus allowed) and Microsoft cloud security benchmark (audit only).
-- PostgreSQL B1ms in westus: not restricted for this subscription; vCPU quota 0/6 used.
-- Free allowance: official Azure for Students pages (offer page, free-services page) do **not** confirm free PostgreSQL hours for this offer → treated as **billable**.
-- `.gitignore` verified: tfstate, tfvars, tfplan, `.env*`, `local.settings.json`, `security/`, `gitleaks*.json`, zips ignored; nothing sensitive tracked.
-- **Required input:** `github_repository` is still a placeholder → must be set before apply or the OIDC federated credential trusts the wrong repo.
-
-## Estimated cost of this deployment (USD/month, Retail Prices API, westus)
-| Item | Basis | Est. |
+## Cloud Security Lab
+| Part | Result | Evidence (in `security/evidence/`, gitignored) |
 |---|---|---|
-| PostgreSQL B1ms compute | 0.022/h × 730 h | 16.06 |
-| PostgreSQL storage 32 GB | ~0.115/GB-mo (published) | ~3.70 |
-| PostgreSQL backup (7 days, LRS) | free up to provisioned size | ~0 |
-| Functions Flex Consumption | on-demand free grant; health checks only | ~0 |
-| Storage (packages, docs, `$web`) | < 1 GB LRS + few ops | < 0.10 |
-| Key Vault Standard | 0.03 / 10k ops | < 0.05 |
-| App Insights / Log Analytics | 5 GB/mo free; cap 0.5 GB/day | ~0 |
-| SWA / identities / role assignments / RG | not created (blob mode) / free | 0 |
-| **Total** | | **≈ 20 (≈ 0.66/day)**; stopping PostgreSQL when idle removes compute cost |
+| A | Full-history gitleaks: no findings (before + fresh clone of main, 12 commits). Manual review: none in Git. Found & fixed in Azure config: provider-injected key-based `AzureWebJobsStorage` (key unusable; shared-key auth disabled) | `gitleaks-before.json`, `gitleaks-after-main.json` |
+| B | Key Vault RBAC; secret `db-admin-password`; app = Secrets User (system MI), admin = Secrets Officer; Key Vault reference Resolved | `keyvault.txt`, `rbac.txt`, `function-app.txt` |
+| C | No real exposure. Controlled rotation demo: old password rejected (HTTP 503, App Insights 9× `28P01`), new works (HTTP 200). Temporary /32 firewall rule removed. No Terraform drift | `rotation-demo.txt`, `appinsights-rotation.txt`, `postgres.txt` |
+| D | OIDC success on main (run 44682632588); negative test from `test-oidc` failed with AADSTS700213 (run 44693891488). Subject uses GitHub's immutable-ID format | `oidc*.txt`, `runs.txt` |
+| Report | `security/Cloud-Security-Lab-Report-Molys-Log.pdf` (5 pages, both answers) | — |
 
-## Other resources consuming credit (read-only, nothing modified)
-| Resource | RG | State | Est. USD/mo | Removable if ZavaShop no longer needed |
-|---|---|---|---|---|
-| Standard Load Balancer `kubernetes` | MC_rg-zavashop-luis… | exists (AKS stopped) | ~18 | Yes — by deleting the AKS cluster, never directly |
-| 2× Standard public IP | MC_rg-zavashop-luis… | allocated | 7.30 | Yes — same (AKS-managed) |
-| ACR Basic | rg-zavashop-luis | exists | 5.07 | Yes |
-| ACR Basic (not ZavaShop) | rg-aks-tarea-luis-1027 | exists | 5.07 | Only if that homework is done |
-| AKS `aks-zavashop-luis` (Free tier, D4s_v4) | rg-zavashop-luis | Stopped, 0 nodes | ~0 | Yes |
-| 8 Container Apps + 2 envs (Consumption) | rg-zavashop-luis | Stopped | ~0 | Yes |
-| Key Vault, Log Analytics, identities, DCR | rg-zavashop-luis | idle | ~0 | Yes |
-| AI Services S0 (gpt-5-mini, pay-per-token) | rg-aks-tarea-luis-1027 | idle | ~0 | Only if that homework is done |
-ZavaShop idle cost ≈ USD 30/month. Cleanest removal (user decision): delete `rg-zavashop-luis` (also removes the AKS-managed MC_ group). Cost Management API returned no rows; confirm in the portal.
+Missing: Azure Portal / GitHub UI **screenshots** (report uses verbatim logs + public run URLs). Add manually if the professor requires images.
 
-## Outstanding
-- Repository: `Luisvvargas/molys-log` (public; not yet created — GitHub API 404 on 2026-11-19). Plan re-run: federated subject `repo:Luisvvargas/molys-log:ref:refs/heads/main`.
-- Approval: register `Microsoft.DBforPostgreSQL`; `terraform apply` (blob mode); create + push GitHub repo.
-- Second Draft: apply → deploy → verify → evidence.
-- Lab A: rescan after push. Lab B: Key Vault evidence after apply. Lab C: nothing exposed → report honestly; optional demo needs approval. Lab D: GitHub secrets + main run + `test-oidc` negative run.
-- PDF report (must state SWA deviation).
+## Azure cleanup (2026-11-19/20)
+Deleted (authorized): `rg-zavashop-luis` (16 resources), its AKS-managed `MC_` group (9), `rg-aks-tarea-luis-1027` (Foundry + ACR). Savings ≈ USD 30/month idle (LB, 2 public IPs, 2 ACR).
+Kept (ownership uncertain / Azure-managed, ≈ $0): `cloud-computing-class-rg`, `cloud-class-rg` (empty), `DefaultResourceGroup-WUS`, `DefaultResourceGroup-CQ` (workspaces), `NetworkWatcherRG`.
+Note: Defender for Key Vault (subscription plan, ~USD 0.25/vault/month) is on — user decision.
+
+## Cost (USD/month, retail)
+PostgreSQL B1ms northcentralus ≈ 12.4 + 32 GB storage ≈ 3.7; everything else < 1. **≈ 17/month.** Stop PostgreSQL when idle: `az postgres flexible-server stop -g rg-molyslog -n psql-molyslog-55kho`.
+
+## Lessons recorded
+- azurerm Flex Consumption injects a key-based `AzureWebJobsStorage`; override to `""` when keys are disabled.
+- Ephemeral write-only passwords + a partially failed apply can desync Key Vault and server → bump `db_password_version`.
+- Key Vault references are cached across restarts; a config change forces re-resolution.
+- `az functionapp show --query defaultHostName` is null for Flex apps → use `properties.defaultHostName`.
+- New GitHub repos send OIDC `sub` with immutable IDs (`owner@id/repo@id`).
+
+## Next actions
+1. Review/submit the PDF (add screenshots if required).
+2. Optionally delete branch `test-oidc` after grading; stop PostgreSQL between sessions.
+3. Do not `terraform destroy` without approval.
