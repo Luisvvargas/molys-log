@@ -272,6 +272,6 @@ resource "azurerm_federated_identity_credential" "github_main" {
   name      = "github-${var.github_branch}"
   parent_id = azurerm_user_assigned_identity.github.id
   issuer    = "https://token.actions.githubusercontent.com"
-  subject   = "repo:${var.github_repository}:ref:refs/heads/${var.github_branch}"
+  subject   = "repo:${coalesce(var.github_oidc_repo_claim, var.github_repository)}:ref:refs/heads/${var.github_branch}"
   audience  = ["api://AzureADTokenExchange"]
 }

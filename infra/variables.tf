@@ -36,6 +36,12 @@ variable "github_repository" {
   type        = string
 }
 
+variable "github_oidc_repo_claim" {
+  description = "Repo part of GitHub's OIDC sub claim. Newer repos send owner@ownerId/repo@repoId; empty = github_repository."
+  type        = string
+  default     = ""
+}
+
 variable "github_branch" {
   description = "Only this branch may authenticate to Azure from GitHub Actions."
   type        = string
