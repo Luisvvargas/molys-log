@@ -21,9 +21,9 @@ Repository: https://github.com/Luisvvargas/molys-log (public). Subscription: Lui
 | B | Key Vault RBAC; secret `db-admin-password`; app = Secrets User (system MI), admin = Secrets Officer; Key Vault reference Resolved | `keyvault.txt`, `rbac.txt`, `function-app.txt` |
 | C | No real exposure. Controlled rotation demo: old password rejected (HTTP 503, App Insights 9× `28P01`), new works (HTTP 200). Temporary /32 firewall rule removed. No Terraform drift | `rotation-demo.txt`, `appinsights-rotation.txt`, `postgres.txt` |
 | D | OIDC success on main (run 44682632588); negative test from `test-oidc` failed with AADSTS700213 (run 44693891488). Subject uses GitHub's immutable-ID format | `oidc*.txt`, `runs.txt` |
-| Report | `security/Cloud-Security-Lab-Report-Molys-Log.pdf` (5 pages, both answers) | — |
+| Report | `security/Cloud-Security-Lab-Report-Molys-Log.pdf` (12 pages, both answers, 11 real screenshots) | `security/evidence/screenshots/` |
 
-Missing: Azure Portal / GitHub UI **screenshots** (report uses verbatim logs + public run URLs). Add manually if the professor requires images.
+Screenshots (2026-11-20, live GitHub + Azure Portal session): OIDC success (summary, login, verify), OIDC negative test, Key Vault secret names, Key Vault IAM roles, Terraform Key Vault reference, health.js, App Insights 28P01 (old credential rejected) and HTTP 200 (new credential), gitleaks CI on main.
 
 ## Azure cleanup (2026-11-19/20)
 Deleted (authorized): `rg-zavashop-luis` (16 resources), its AKS-managed `MC_` group (9), `rg-aks-tarea-luis-1027` (Foundry + ACR). Savings ≈ USD 30/month idle (LB, 2 public IPs, 2 ACR).
