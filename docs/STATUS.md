@@ -65,7 +65,8 @@ Project lives in `~/dev/molys_log` (the iCloud copy in `~/Documents` is abandone
 ZavaShop idle cost ≈ USD 30/month. Cleanest removal (user decision): delete `rg-zavashop-luis` (also removes the AKS-managed MC_ group). Cost Management API returned no rows; confirm in the portal.
 
 ## Outstanding
-- Approval: register `Microsoft.DBforPostgreSQL`; `terraform apply` (blob mode); create + push GitHub repo (need owner/name).
+- Repository: `Luisvvargas/molys-log` (public; not yet created — GitHub API 404 on 2026-11-19). Plan re-run: federated subject `repo:Luisvvargas/molys-log:ref:refs/heads/main`.
+- Approval: register `Microsoft.DBforPostgreSQL`; `terraform apply` (blob mode); create + push GitHub repo.
 - Second Draft: apply → deploy → verify → evidence.
 - Lab A: rescan after push. Lab B: Key Vault evidence after apply. Lab C: nothing exposed → report honestly; optional demo needs approval. Lab D: GitHub secrets + main run + `test-oidc` negative run.
 - PDF report (must state SWA deviation).

@@ -61,7 +61,7 @@ Requires Terraform ≥ 1.11 (write-only attributes keep the DB password out of s
 
 ## GitHub Actions (OIDC)
 
-After `terraform apply`, create the repository secrets `AZURE_CLIENT_ID` (output `github_oidc_client_id`), `AZURE_TENANT_ID` and `AZURE_SUBSCRIPTION_ID`. None is a password. The federated credential trusts only `repo:<owner>/<repo>:ref:refs/heads/main`; running `deploy.yml` from `test-oidc` must fail at login.
+After `terraform apply`, create the repository secrets `AZURE_CLIENT_ID` (output `github_oidc_client_id`), `AZURE_TENANT_ID` and `AZURE_SUBSCRIPTION_ID`. None is a password. The federated credential trusts only `repo:Luisvvargas/molys-log:ref:refs/heads/main`; running `deploy.yml` from `test-oidc` must fail at login.
 
 ## Secrets policy
 
