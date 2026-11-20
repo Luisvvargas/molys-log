@@ -1,0 +1,19 @@
+{
+  "name": "molys-log-api",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/functions/*.js",
+  "scripts": {
+    "start": "func start",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.7.0",
+    "@azure/identity": "^4.10.0",
+    "@azure/storage-blob": "^12.27.0",
+    "pg": "^8.16.0"
+  }
+}

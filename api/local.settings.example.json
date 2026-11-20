@@ -1,0 +1,14 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "DB_HOST": "",
+    "DB_NAME": "molyslog",
+    "DB_USER": "",
+    "DB_PASSWORD": "",
+    "STORAGE_ACCOUNT_NAME": "",
+    "DOCUMENTS_CONTAINER": "pet-documents"
+  },
+  "Host": { "CORS": "http://localhost:5173" }
+}

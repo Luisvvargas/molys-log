@@ -1,0 +1,29 @@
+# Secrets / local config
+.env
+.env.*
+!.env.example
+local.settings.json
+appsettings*.json
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+*.tfplan
+tfplan
+crash.log
+
+# Security scan outputs (may reference secrets) and evidence
+security/
+gitleaks*.json
+
+# Build / deps
+node_modules/
+dist/
+*.zip
+.DS_Store
+
+# Course material
+*.pdf

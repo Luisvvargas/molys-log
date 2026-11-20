@@ -1,0 +1,5 @@
+# Copy to terraform.tfvars (gitignored) and fill in. Contains no secrets.
+subscription_id   = "00000000-0000-0000-0000-000000000000"
+github_repository = "owner/molys-log"
+location          = "centralus"
+swa_location      = "centralus"

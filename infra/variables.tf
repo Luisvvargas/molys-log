@@ -1,0 +1,51 @@
+variable "subscription_id" {
+  description = "Target Azure subscription (team's Azure for Students subscription)."
+  type        = string
+}
+
+variable "project" {
+  description = "Short project name used in resource names."
+  type        = string
+  default     = "molyslog"
+}
+
+variable "location" {
+  description = "Region for Functions, PostgreSQL, Storage, Key Vault and monitoring."
+  type        = string
+  default     = "centralus" # subscription policy allows: westus, brazilsouth, northcentralus, mexicocentral, centralus
+}
+
+variable "swa_location" {
+  description = "Static Web Apps region (SWA offers: westus2, centralus, eastus2, westeurope, eastasia)."
+  type        = string
+  default     = "centralus" # only overlap between SWA regions and the allowed-regions policy
+}
+
+variable "github_repository" {
+  description = "GitHub repository as owner/name, trusted by the OIDC federated credential."
+  type        = string
+}
+
+variable "github_branch" {
+  description = "Only this branch may authenticate to Azure from GitHub Actions."
+  type        = string
+  default     = "main"
+}
+
+variable "db_admin_login" {
+  description = "PostgreSQL administrator login name (not a secret)."
+  type        = string
+  default     = "molysadmin"
+}
+
+variable "db_password_version" {
+  description = "Increment to generate and apply a new PostgreSQL admin password (rotation)."
+  type        = number
+  default     = 1
+}
+
+variable "postgres_sku" {
+  description = "PostgreSQL Flexible Server SKU. B_Standard_B1ms is the cheapest burstable tier."
+  type        = string
+  default     = "B_Standard_B1ms"
+}
