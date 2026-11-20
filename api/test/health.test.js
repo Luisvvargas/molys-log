@@ -24,6 +24,11 @@ test('unresolved Key Vault reference -> degraded, DB not attempted', async () =>
   assert.strictEqual(called, false);
 });
 
+test('hanging dependency times out instead of hanging the request', async () => {
+  const { withTimeout } = require('../src/health');
+  await assert.rejects(withTimeout(new Promise(() => {}), 50), { code: 'CHECK_TIMEOUT' });
+});
+
 test('dependency error -> degraded, no secret in response', async () => {
   const r = await runChecks(env, { checkDatabase: boom, checkStorage: ok });
   assert.strictEqual(r.checks.database, false);

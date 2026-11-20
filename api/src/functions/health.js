@@ -5,8 +5,8 @@ app.http('health', {
   methods: ['GET'],
   authLevel: 'anonymous',
   route: 'health',
-  handler: async () => {
-    const result = await runChecks();
+  handler: async (_request, context) => {
+    const result = await runChecks(process.env, undefined, (msg) => context.warn(msg));
     return { status: result.status === 'ok' ? 200 : 503, jsonBody: result };
   },
 });
